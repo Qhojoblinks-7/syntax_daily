@@ -1,6 +1,6 @@
 import React, { useState } from 'react'; // Import useState
 // Lucide React for icons
-import { CheckCircle, Share2, TrendingUp, Code, Users, PlayCircle, ClipboardList, AlertTriangle, Lightbulb, Clock, BarChart2, Share, Menu, X } from 'lucide-react'; // Added Menu, X
+import { CheckCircle, Share2, TrendingUp, Code, Users, PlayCircle, ClipboardList, AlertTriangle, Lightbulb, Clock, BarChart2, Share, Menu, X, Star } from 'lucide-react'; // Added Menu, X
 import { Link } from 'react-router-dom';
 
 function LandingPage() {
