@@ -75,26 +75,8 @@ function LoginPage({ initialAuthMode = 'login' }) { // Added initialAuthMode pro
     }
   };
 
-  const handleSocialAuth = async (provider) => {
-    setAuthError(null);
-    setAuthSuccess(null);
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: window.location.origin // Redirect back to the current origin after OAuth
-        }
-      });
-      if (error) throw error;
-      // Supabase will handle the redirect, no success message needed here immediately
-    } catch (error) {
-      setAuthError(error.message);
-      console.error("Social auth error:", error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Removed handleSocialAuth function as social login features are being removed.
+  // const handleSocialAuth = async (provider) => { ... };
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-gray-800 flex items-center justify-center p-4 sm:p-8">
@@ -208,35 +190,8 @@ function LoginPage({ initialAuthMode = 'login' }) { // Added initialAuthMode pro
           )}
         </Formik>
 
-        {/* OR Separator */}
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-gray-500">OR</span>
-          </div>
-        </div>
-
-        {/* Social Login Buttons */}
-        <div className="space-y-3">
-          <button
-            onClick={() => handleSocialAuth('google')}
-            className="w-full flex items-center justify-center px-6 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition duration-200 transform hover:scale-105"
-            disabled={isLoading}
-          >
-            <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google logo" className="h-5 w-5 mr-3" />
-            Continue with Google
-          </button>
-          <button
-            onClick={() => handleSocialAuth('github')}
-            className="w-full flex items-center justify-center px-6 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition duration-200 transform hover:scale-105"
-            disabled={isLoading}
-          >
-            <img src="https://www.svgrepo.com/show/349372/github.svg" alt="GitHub logo" className="h-5 w-5 mr-3" />
-            Continue with GitHub
-          </button>
-        </div>
+        {/* Removed OR Separator */}
+        {/* Removed Social Login Buttons */}
 
         {/* Toggle Login/Signup Mode */}
         <div className="mt-6 text-center">

@@ -4,14 +4,78 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 const initialState = {
   session: null,
   profile: null,
-  isLoading: true, // Indicates if auth state is still being determined
+  isLoading: false,
   error: null,
 };
 
-// Async Thunk for user sign-in/sign-up
+// Async Thunk for fetching user profile
+// Now accepts the 'user' object directly from the session
+export const fetchUserProfile = createAsyncThunk(
+  'auth/fetchUserProfile',
+  async ({ supabase, userId, user }, { rejectWithValue }) => { // Added 'user' parameter
+    try {
+      // First, try to fetch the existing profile
+      let { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error && error.code === 'PGRST116') { // No rows found (profile does not exist)
+        console.log(`Profile for user ${userId} not found. Creating new profile.`);
+        // --- ADDED FOR DEBUGGING: Log the user object to inspect its contents ---
+        console.log("User object for new profile creation:", user);
+        // --- END DEBUGGING ADDITION ---
+        
+        // Use the 'user' object passed from the session directly
+        // No need for supabase.auth.admin.getUserById(userId) here
+        if (!user) {
+          console.error("User object is missing when attempting to create new profile.");
+          return rejectWithValue("User data not available for profile creation.");
+        }
+
+        const newProfile = {
+          id: userId,
+          // Prioritize display_name from user_metadata (for email signup or if set by provider)
+          // Fallback to full_name, then name, then email
+          display_name: user.user_metadata.display_name ||
+                        user.user_metadata.full_name ||
+                        user.user_metadata.name ||
+                        user.email,
+          // Add other default profile fields if necessary
+          avatar_url: user.user_metadata.avatar_url || null,
+        };
+
+        const { data: insertedProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert([newProfile])
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error("Error inserting new profile:", insertError.message);
+          throw insertError;
+        }
+        profile = insertedProfile;
+
+      } else if (error) {
+        console.error("Error fetching profile:", error.message);
+        throw error;
+      }
+
+      return profile;
+    } catch (e) {
+      return rejectWithValue(e.message);
+    }
+  }
+);
+
+// Async Thunk for signing in a user (email/password)
+// Note: Social logins are handled directly in LoginPage using supabase.auth.signInWithOAuth
 export const signInUser = createAsyncThunk(
   'auth/signInUser',
   async ({ supabase, email, password, authMode, displayName }, { rejectWithValue, dispatch }) => {
+    dispatch(setAuthLoading(true));
     try {
       let data, error;
       if (authMode === 'signup') {
@@ -19,73 +83,49 @@ export const signInUser = createAsyncThunk(
           email,
           password,
           options: {
-            data: { display_name: displayName } // Store display_name in auth.users.user_metadata
+            data: { display_name: displayName } // Pass display_name to user_metadata
           }
         }));
-        if (error) throw error;
-        if (data.user) {
-          // If signup is successful, also create a profile entry in the 'profiles' table
-          // This insert should happen AFTER successful user creation in auth.users
-          const { error: profileError } = await supabase.from('profiles').insert([
-            { id: data.user.id, display_name: displayName }
-          ]);
-          if (profileError) throw profileError;
-          // For signup, we don't immediately set session as user needs to confirm email
-          // The onAuthStateChange listener will handle setting session once confirmed/logged in
-          return { user: data.user, message: 'Sign up successful! Please check your email to confirm your account.' };
-        }
-      } else { // login
+      } else {
         ({ data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         }));
-        if (error) throw error;
       }
-      return data.session; // Return session for fulfilled action
+
+      if (error) throw error;
+      
+      // If sign-up/in is successful, ensure profile is fetched/created
+      if (data.user) {
+        // Pass the 'user' object directly to fetchUserProfile
+        await dispatch(fetchUserProfile({ supabase, userId: data.user.id, user: data.user }));
+      }
+
+      return data.session;
     } catch (e) {
-      // Dispatch a local error action to update the slice's error state
       dispatch(setAuthError(e.message));
       return rejectWithValue(e.message);
+    } finally {
+      dispatch(setAuthLoading(false));
     }
   }
 );
 
-// Async Thunk for user sign-out
+// Async Thunk for signing out a user
 export const signOutUser = createAsyncThunk(
   'auth/signOutUser',
   async (supabase, { rejectWithValue, dispatch }) => {
+    dispatch(setAuthLoading(true));
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      dispatch(clearAuth()); // Clear auth state in Redux
-      return true; // Indicate success
+      dispatch(clearAuth()); // Clear auth state on successful logout
+      return true;
     } catch (e) {
       dispatch(setAuthError(e.message));
       return rejectWithValue(e.message);
-    }
-  }
-);
-
-// Async Thunk for fetching user profile
-export const fetchUserProfile = createAsyncThunk(
-  'auth/fetchUserProfile',
-  async ({ supabase, userId }, { rejectWithValue, dispatch }) => {
-    try {
-      // Removed .single() to avoid 406 error if no profile exists yet
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('id', userId);
-
-      if (error) throw error; // Handle any other Supabase errors
-
-      // If data is an empty array (no profile found), set profile to null
-      const profileData = data && data.length > 0 ? data[0] : null;
-      dispatch(setProfile(profileData)); // Update profile in Redux
-      return profileData;
-    } catch (e) {
-      dispatch(setAuthError(e.message));
-      return rejectWithValue(e.message);
+    } finally {
+      dispatch(setAuthLoading(false));
     }
   }
 );
@@ -98,7 +138,7 @@ const authSlice = createSlice({
     // Synchronous reducers
     setSession: (state, action) => {
       state.session = action.payload;
-      state.isLoading = false;
+      state.isLoading = false; // Session status determines initial loading
       state.error = null;
     },
     setProfile: (state, action) => {
@@ -119,45 +159,21 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Handle pending, fulfilled, and rejected states of async thunks
     builder
-      .addCase(signInUser.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(signInUser.fulfilled, (state, action) => {
-        // Session is handled by onAuthStateChange listener, not directly here for sign-in
-        // For signup, a message might be returned
-        state.isLoading = false;
-        state.error = null;
-      })
-      .addCase(signInUser.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload || 'Authentication failed.';
-      })
-      .addCase(signOutUser.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(signOutUser.fulfilled, (state) => {
-        // State cleared by clearAuth reducer
-        state.isLoading = false;
-        state.error = null;
-      })
-      .addCase(signOutUser.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload || 'Logout failed.';
-      })
+      // Handle fetchUserProfile lifecycle
       .addCase(fetchUserProfile.pending, (state) => {
-        // Profile loading is part of overall auth loading, not separate
+        // state.isLoading = true; // Handled by setAuthLoading in App.jsx
         state.error = null;
       })
       .addCase(fetchUserProfile.fulfilled, (state, action) => {
-        // Profile set by setProfile reducer
+        state.profile = action.payload;
+        // state.isLoading = false; // Handled by setAuthLoading in App.jsx
         state.error = null;
       })
       .addCase(fetchUserProfile.rejected, (state, action) => {
-        state.error = action.payload || 'Failed to fetch profile.';
+        state.profile = null;
+        // state.isLoading = false; // Handled by setAuthLoading in App.jsx
+        state.error = action.payload || 'Failed to fetch user profile.';
       });
   },
 });

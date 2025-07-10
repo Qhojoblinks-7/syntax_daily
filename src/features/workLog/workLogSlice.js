@@ -22,11 +22,15 @@ export const fetchMyWorkLogs = createAsyncThunk(
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log("Fetched My Work Logs Data:", data); // --- ADDED FOR DEBUGGING ---
       dispatch(setMyEntries(data)); // Update state with fetched data
       return data;
     } catch (e) {
+      console.error("Error fetching My Work Logs:", e.message); // --- ADDED FOR DEBUGGING ---
       dispatch(setWorkLogError(e.message)); // Dispatch local error action
       return rejectWithValue(e.message);
+    } finally {
+      dispatch(setWorkLogLoading(false)); // Ensure loading state is reset
     }
   }
 );
@@ -45,11 +49,15 @@ export const fetchPublicWorkLogs = createAsyncThunk(
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log("Fetched Public Work Logs Data:", data); // --- ADDED FOR DEBUGGING ---
       dispatch(setPublicEntries(data)); // Update state with fetched data
       return data;
     } catch (e) {
+      console.error("Error fetching Public Work Logs:", e.message); // --- ADDED FOR DEBUGGING ---
       dispatch(setWorkLogError(e.message)); // Dispatch local error action
       return rejectWithValue(e.message);
+    } finally {
+      dispatch(setWorkLogLoading(false)); // Ensure loading state is reset
     }
   }
 );
@@ -60,6 +68,15 @@ export const addOrUpdateWorkLog = createAsyncThunk(
   async ({ supabase, entryData }, { rejectWithValue, dispatch }) => {
     dispatch(setWorkLogLoading(true)); // Set loading state
     try {
+      // --- IMPORTANT: Add a check for user_id here ---
+      if (!entryData.user_id) {
+        console.error("Attempted to add/update work log without a valid user_id:", entryData);
+        // Dispatch an error or handle it as appropriate
+        dispatch(setWorkLogError("User ID is missing for work log entry. Please ensure you are logged in."));
+        return rejectWithValue("User ID is missing.");
+      }
+      // --- End of check ---
+
       let error;
       if (entryData.id) { // If ID exists, it's an update
         ({ error } = await supabase
@@ -74,11 +91,14 @@ export const addOrUpdateWorkLog = createAsyncThunk(
       }
 
       if (error) throw error;
-      // Data will be refetched by the real-time subscription in App.jsx
+      // Data will be refetched by the real-time subscription in App.jsx (or explicit fetch)
       return true; // Indicate success
     } catch (e) {
       dispatch(setWorkLogError(e.message)); // Dispatch local error action
       return rejectWithValue(e.message);
+    } finally {
+      // Ensure loading state is reset even on error
+      dispatch(setWorkLogLoading(false));
     }
   }
 );
@@ -101,6 +121,9 @@ export const deleteWorkLog = createAsyncThunk(
     } catch (e) {
       dispatch(setWorkLogError(e.message)); // Dispatch local error action
       return rejectWithValue(e.message);
+    } finally {
+      // Ensure loading state is reset even on error
+      dispatch(setWorkLogLoading(false));
     }
   }
 );
