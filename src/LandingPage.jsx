@@ -77,7 +77,11 @@ function LandingPage() {
           </div>
 
           <div className="relative z-10 max-w-4xl mx-auto">
-            {/* Headline - Font sizes scale up from mobile (4xl) to desktop (6xl) */}
+            {/* New Badge */}
+            <div className="inline-flex items-center bg-blue-50 bg-opacity-20 text-blue-100 text-sm font-semibold px-4 py-2 rounded-full mb-6 shadow-md animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+              <Star size={16} className="mr-2 text-yellow-300" fill="currentColor" /> Perfect for ALX Students & Engineers
+            </div>
+
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-6 animate-fade-in-up">
               Streamline Your Dev Day. Log Your Progress. <br /> <span className="text-blue-200">Share Your Wins.</span>
             </h1>
