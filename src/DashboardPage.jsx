@@ -336,7 +336,7 @@
         <div className="min-h-screen bg-gray-50 font-sans text-gray-800 flex flex-col md:flex-row">
           {/* Sidebar Navigation (Desktop) */}
           <aside className="hidden md:flex flex-col w-64 bg-blue-800 text-white shadow-xl p-6 rounded-r-2xl">
-            <h2 className="text-3xl font-bold mb-8 text-center tracking-wide">WorkLog</h2>
+            <h2 className="text-3xl font-bold mb-8 text-center tracking-wide">Syntax Daily</h2>
             <nav className="flex-grow space-y-4">
               <button
                 onClick={() => setCurrentPage('my-log')}

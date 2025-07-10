@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux'; // Import useDispatch and useSelector
 import { supabase } from './supabaseClient'; // Import the centralized supabase client
-
+import Logo from './assets/syntaxD.png'; // Import your logo image
 // Lucide React for icons
 import { CheckCircle, Share2, TrendingUp, Code, Users, PlayCircle, ClipboardList, AlertTriangle, Lightbulb, Clock, BarChart2, Share, Menu, X, Star } from 'lucide-react'; // Added Star
 
@@ -56,8 +56,12 @@ function LandingPage() {
       <nav className="bg-white shadow-sm py-4 px-6 sm:px-8 fixed top-0 left-0 w-full z-40">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <Link to="/" className="flex items-center text-2xl font-bold text-blue-700" onClick={closeMobileMenu}>
-            <ClipboardList className="mr-2 text-blue-600" size={28} strokeWidth={2} />
-            WorkLog
+            <img 
+                src={Logo}
+                alt="Syntax Daily Logo"
+                className="h-15 w-auto mr-2"
+            />
+            Syntax Daily
           </Link>
 
           {/* Hamburger Menu Icon (visible on mobile, hidden on md and up) */}
