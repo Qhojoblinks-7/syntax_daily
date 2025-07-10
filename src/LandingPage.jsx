@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux'; // Import useDispatch and useSelector
 import { supabase } from './supabaseClient'; // Import the centralized supabase client
-import Logo from './assets/syntaxD.png'; // Import your logo image
+import Logo from '../public/syntaxD.png'; // Import your logo image
 // Lucide React for icons
 import { CheckCircle, Share2, TrendingUp, Code, Users, PlayCircle, ClipboardList, AlertTriangle, Lightbulb, Clock, BarChart2, Share, Menu, X, Star } from 'lucide-react'; // Added Star
 
