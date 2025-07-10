@@ -1,13 +1,25 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react'; // Import the React plugin for Vite
+import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(), // This enables React support in Vite
-    // Tailwind CSS is typically handled by PostCSS, which Vite automatically picks up.
-    // You do not need to import 'tailwindcss' or '@tailwindcss/vite' here.
+    react(),
   ],
-  // The 'content', 'theme', and 'plugins' for Tailwind CSS
-  // should be in your tailwind.config.js file, not here.
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            // Group all node_modules into a vendor chunk
+            return id.toString().split('node_modules/')[1].split('/')[0].toString();
+          }
+          // You can also define chunks for specific parts of your app
+          // if (id.includes('src/features/auth')) {
+          //   return 'auth-feature';
+          // }
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000 // Optionally increase the limit to 1000 kB
+  }
 });
