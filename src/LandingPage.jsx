@@ -78,7 +78,7 @@ function LandingPage() {
 
           <div className="relative z-10 max-w-4xl mx-auto">
             {/* New Badge */}
-            <div className="inline-flex items-center bg-blue-50 bg-opacity-20 text-blue-100 text-sm font-semibold px-4 py-2 rounded-full mb-6 shadow-md animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+            <div className="inline-flex items-center bg-blue-400 bg-opacity-20 text-blue-100 text-sm font-semibold px-4 py-2 rounded-full mb-6 shadow-md animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               <Star size={16} className="mr-2 text-yellow-300" fill="currentColor" /> Perfect for ALX Students & Engineers
             </div>
 
@@ -207,23 +207,8 @@ function LandingPage() {
                   <li className="flex items-center"><CheckCircle className="text-blue-200 mr-1.5 sm:mr-2" size={14} sm:size={16} strokeWidth={2} /> Professional branding</li>
                 </ul>
               </div>
-
-              {/* Remaining features (Developer-Friendly Design, Connect & Learn) - Adjusted for consistency */}
-              <div className="flex flex-col p-5 sm:p-6 bg-gray-50 rounded-xl shadow-md border border-gray-100">
-                <div className="p-2 sm:p-3 bg-red-100 rounded-full w-fit mb-3 sm:mb-4">
-                  <Code className="text-red-600" size={24} sm:size={28} strokeWidth={2} />
-                </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 sm:mb-3">Developer-Friendly Design</h3>
-                <p className="text-sm sm:text-base text-gray-600">A clean, minimalist interface that gets out of your way, letting you focus on coding.</p>
-              </div>
-
-              <div className="flex flex-col p-5 sm:p-6 bg-gray-50 rounded-xl shadow-md border border-gray-100">
-                <div className="p-2 sm:p-3 bg-orange-100 rounded-full w-fit mb-3 sm:mb-4">
-                  <Users className="text-orange-600" size={24} sm:size={28} strokeWidth={2} />
-                </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 sm:mb-3">Connect & Learn</h3>
-                <p className="text-sm sm:text-base text-gray-600">Discover public logs from other engineers, gain insights, and find inspiration for your own projects.</p>
-              </div>
+              
+              
             </div>
           </div>
         </section>
