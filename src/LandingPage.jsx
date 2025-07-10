@@ -1,10 +1,21 @@
-import React, { useState } from 'react'; // Import useState
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux'; // Import useDispatch and useSelector
+import { supabase } from './supabaseClient'; // Import the centralized supabase client
+
 // Lucide React for icons
-import { CheckCircle, Share2, TrendingUp, Code, Users, PlayCircle, ClipboardList, AlertTriangle, Lightbulb, Clock, BarChart2, Share, Menu, X, Star } from 'lucide-react'; // Added Menu, X
-import { Link } from 'react-router-dom';
+import { CheckCircle, Share2, TrendingUp, Code, Users, PlayCircle, ClipboardList, AlertTriangle, Lightbulb, Clock, BarChart2, Share, Menu, X, Star } from 'lucide-react'; // Added Star
+
+// Import the async thunk for fetching reviews
+import { fetchApprovedReviews } from './features/workLog/workLogSlice';
 
 function LandingPage() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile menu
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const dispatch = useDispatch();
+
+  // Select reviews and their loading/error states from the Redux store
+  const { reviews, reviewsLoading, reviewsError } = useSelector((state) => state.workLog);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -14,11 +25,34 @@ function LandingPage() {
     setIsMobileMenuOpen(false);
   };
 
+  // Effect to scroll to section when hash changes
+  useEffect(() => {
+    if (location.hash) {
+      const element = document.getElementById(location.hash.substring(1)); // Remove '#'
+      if (element) {
+        // Use setTimeout to ensure the element is rendered and the navbar is in place
+        // before attempting to scroll. Adjust delay if needed.
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 100); // Small delay to account for rendering and fixed navbar
+      }
+    } else {
+      // Optional: Scroll to top when no hash is present (e.g., on initial load or navigating to '/')
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [location]); // Re-run effect when location object changes
+
+  // Effect to fetch approved reviews on component mount
+  useEffect(() => {
+    dispatch(fetchApprovedReviews(supabase));
+  }, [dispatch, supabase]); // Depend on dispatch and supabase
+
+  // Get the first review to display, if available
+  const displayedReview = reviews.length > 0 ? reviews[0] : null;
+
   return (
-    // Base styles for mobile, then overridden for larger screens
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800 antialiased">
       {/* Navbar - Mobile-first with Burger Menu */}
-      {/* Changed to fixed position, top-0, left-0, w-full, z-40 */}
       <nav className="bg-white shadow-sm py-4 px-6 sm:px-8 fixed top-0 left-0 w-full z-40">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <Link to="/" className="flex items-center text-2xl font-bold text-blue-700" onClick={closeMobileMenu}>
@@ -48,13 +82,11 @@ function LandingPage() {
 
         {/* Mobile Menu Overlay (conditionally rendered) */}
         {isMobileMenuOpen && (
-          // Changed to fixed position, top-16 (approx height of nav), z-30
           <div className="md:hidden fixed inset-x-0 top-16 bg-white shadow-lg py-4 z-30">
             <div className="flex flex-col items-center space-y-4">
               <Link to="/#features" className="block text-gray-800 hover:text-blue-700 text-lg font-medium py-2" onClick={closeMobileMenu}>Features</Link>
               <Link to="/#how-it-works" className="block text-gray-800 hover:text-blue-700 text-lg font-medium py-2" onClick={closeMobileMenu}>How it Works</Link>
               <Link to="/#testimonials" className="block text-gray-800 hover:text-blue-700 text-lg font-medium py-2" onClick={closeMobileMenu}>Reviews</Link>
-              {/* Changed w-fit to w-auto for better mobile button width */}
               <Link to="/signup" className="w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 shadow-md text-lg font-medium" onClick={closeMobileMenu}>
                 Get Started Free
               </Link>
@@ -64,10 +96,10 @@ function LandingPage() {
       </nav>
 
       {/* A div to push content down, accounting for the fixed navbar height */}
-      <div className="pt-16"> {/* This padding-top should match the navbar height */}
-        {/* Hero Section - Mobile-first: Vertical stacking for content, then horizontal for buttons */}
+      <div className="pt-16">
+        {/* Hero Section */}
         <header className="relative bg-gradient-to-br from-blue-600 to-blue-800 text-white py-16 sm:py-20 px-6 sm:px-8 text-center overflow-hidden rounded-b-3xl shadow-lg">
-          {/* Abstract background shapes - Full width/height, opacity for subtle effect */}
+          {/* Abstract background shapes */}
           <div className="absolute inset-0 z-0 opacity-10">
             <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
               <circle cx="20" cy="20" r="15" fill="currentColor" className="text-blue-500 animate-pulse" style={{ animationDuration: '6s' }} />
@@ -85,11 +117,9 @@ function LandingPage() {
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-6 animate-fade-in-up">
               Streamline Your Dev Day. Log Your Progress. <br /> <span className="text-blue-200">Share Your Wins.</span>
             </h1>
-            {/* Sub-headline - Font sizes scale up from mobile (lg) to desktop (xl) */}
             <p className="text-lg sm:text-xl mb-8 sm:mb-10 opacity-90 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
               The intuitive work log for modern software engineers, built for personal tracking and professional sharing.
             </p>
-            {/* CTA Buttons - Stack vertically on mobile, then side-by-side on sm+ */}
             <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
               <Link to="/signup" className="px-8 py-3 bg-white text-blue-700 font-bold rounded-full shadow-lg hover:bg-blue-100 transform hover:scale-105 transition duration-300 text-lg">
                 Get Started - It's Free!
@@ -101,15 +131,13 @@ function LandingPage() {
           </div>
         </header>
 
-        {/* Problem/Solution Section - Mobile-first: Single column, then two columns on md+ */}
+        {/* Problem/Solution Section */}
         <section className="py-12 sm:py-16 px-6 sm:px-8 bg-gradient-to-b from-gray-50 to-gray-100">
           <div className="max-w-6xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-10 sm:mb-12">
               Tired of losing track of your dev efforts?
             </h2>
-            {/* Grid layout - Single column on mobile, two columns on md+ */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 items-start">
-              {/* The Challenge Card - Padding and text sizes are set for mobile first */}
               <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-red-100 transform hover:translate-y-[-5px] transition duration-300">
                 <div className="flex items-center justify-center sm:justify-start mb-4 sm:mb-6">
                   <AlertTriangle className="text-red-500 mr-2 sm:mr-3" size={32} sm:size={36} strokeWidth={2} />
@@ -135,7 +163,6 @@ function LandingPage() {
                 </ul>
               </div>
 
-              {/* Our Solution Card - Padding and text sizes are set for mobile first */}
               <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-green-100 transform hover:translate-y-[-5px] transition duration-300">
                 <div className="flex items-center justify-center sm:justify-start mb-4 sm:mb-6">
                   <Lightbulb className="text-green-600 mr-2 sm:mr-3" size={32} sm:size={36} strokeWidth={2} />
@@ -151,7 +178,7 @@ function LandingPage() {
           </div>
         </section>
 
-        {/* Key Features Section - Mobile-first: Single column, then multiple columns on md+ and lg+ */}
+        {/* Key Features Section */}
         <section id="features" className="py-12 sm:py-16 px-6 sm:px-8 bg-white shadow-inner rounded-t-3xl">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-4">
@@ -160,9 +187,7 @@ function LandingPage() {
             <p className="text-base sm:text-lg text-center text-gray-600 mb-10 sm:mb-12">
               Built specifically for software engineers who want to document their journey <br className="hidden sm:inline" /> and showcase their progress professionally.
             </p>
-            {/* Grid layout - Single column on mobile, two columns on md+, three on lg+ */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {/* Feature Cards - Padding and text sizes are set for mobile first */}
               <div className="flex flex-col p-5 sm:p-6 bg-gray-50 rounded-xl shadow-md border border-gray-100">
                 <div className="p-2 sm:p-3 bg-blue-100 rounded-full w-fit mb-3 sm:mb-4">
                   <Clock className="text-blue-600" size={24} sm:size={28} strokeWidth={2} />
@@ -208,31 +233,50 @@ function LandingPage() {
                 </ul>
               </div>
               
-              
             </div>
           </div>
         </section>
 
-        {/* How It Works Section - Mobile-first: Single column, then three columns on md+ */}
+        {/* How It Works Section */}
         <section id="how-it-works" className="py-12 sm:py-16 px-6 sm:px-8 bg-gray-100">
           <div className="max-w-6xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-10 sm:mb-12">
               How It Works
             </h2>
-            {/* Grid layout - Single column on mobile, three columns on md+ */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-              {/* Step Cards - Padding and text sizes are set for mobile first */}
-              <div className="flex flex-col items-center p-5 sm:p-6 bg-white rounded-xl shadow-md border border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 relative">
+              {/* SVG for connecting lines (visible on md and up) */}
+              <svg className="hidden md:block absolute inset-0 w-full h-full z-0" viewBox="0 0 1000 100" preserveAspectRatio="none">
+                {/* Line from Step 1 to Step 2 */}
+                <path
+                  d="M 166 50 C 300 20, 350 80, 500 50"
+                  fill="none"
+                  stroke="#93C5FD" // Tailwind blue-300
+                  strokeWidth="3"
+                  className="animate-draw-line"
+                />
+                {/* Line from Step 2 to Step 3 */}
+                <path
+                  d="M 500 50 C 650 20, 700 80, 833 50"
+                  fill="none"
+                  stroke="#93C5FD" // Tailwind blue-300
+                  strokeWidth="3"
+                  className="animate-draw-line"
+                  style={{ animationDelay: '0.5s' }} /* Delay second line animation */
+                />
+              </svg>
+
+              {/* Step Cards */}
+              <div className="flex flex-col items-center p-5 sm:p-6 bg-white rounded-xl shadow-md border border-gray-200 z-10">
                 <span className="text-4xl sm:text-5xl font-extrabold text-blue-600 mb-3 sm:mb-4">1</span>
                 <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2 sm:mb-3">Sign Up</h3>
                 <p className="text-sm sm:text-base text-gray-600">Create your free account in seconds. No credit card required.</p>
               </div>
-              <div className="flex flex-col items-center p-5 sm:p-6 bg-white rounded-xl shadow-md border border-gray-200">
+              <div className="flex flex-col items-center p-5 sm:p-6 bg-white rounded-xl shadow-md border border-gray-200 z-10">
                 <span className="text-4xl sm:text-5xl font-extrabold text-blue-600 mb-3 sm:mb-4">2</span>
                 <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2 sm:mb-3">Log Your Work</h3>
                 <p className="text-sm sm:text-base text-gray-600">Start tracking projects, tasks, and hours with our intuitive interface.</p>
               </div>
-              <div className="flex flex-col items-center p-5 sm:p-6 bg-white rounded-xl shadow-md border border-gray-200">
+              <div className="flex flex-col items-center p-5 sm:p-6 bg-white rounded-xl shadow-md border border-gray-200 z-10">
                 <span className="text-4xl sm:text-5xl font-extrabold text-blue-600 mb-3 sm:mb-4">3</span>
                 <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2 sm:mb-3">Share Your Progress</h3>
                 <p className="text-sm sm:text-base text-gray-600">Optionally share your achievements on social media or with your network.</p>
@@ -241,19 +285,33 @@ function LandingPage() {
           </div>
         </section>
 
-        {/* Testimonial Section - Padding and font sizes set for mobile first */}
+        {/* Testimonial Section - Updated to match the provided image */}
         <section id="testimonials" className="py-12 sm:py-16 px-6 sm:px-8 bg-blue-700 text-white rounded-t-3xl shadow-lg">
           <div className="max-w-3xl mx-auto text-center">
             <PlayCircle className="text-blue-200 mx-auto mb-4 sm:mb-6" size={56} sm:size={64} strokeWidth={1.5} />
-            <p className="text-lg sm:text-xl italic leading-relaxed mb-6 sm:mb-8">
-              "The Software Engineer Work Log has transformed how I manage my projects. It's simple, effective, and the public sharing feature is a game-changer for my professional visibility!"
-            </p>
-            <p className="text-base sm:text-lg font-semibold">- [Your Name Here], ALX Software Engineering Student</p>
-            <p className="text-blue-200 text-xs sm:text-sm mt-1">Future Successful Engineer & WorkLog User</p>
+            {reviewsLoading && (
+              <p className="text-blue-200">Loading review...</p>
+            )}
+            {reviewsError && (
+              <p className="text-red-300">Error loading review: {reviewsError}</p>
+            )}
+            {!reviewsLoading && !reviewsError && !displayedReview && (
+              <p className="text-blue-200 italic">No reviews yet. Be the first to share your experience!</p>
+            )}
+            {!reviewsLoading && !reviewsError && displayedReview && (
+              <div className="bg-blue-800 p-6 rounded-xl shadow-md flex flex-col items-center text-center max-w-lg mx-auto"> {/* Added max-w-lg and mx-auto for centering */}
+                <Star size={24} className="text-yellow-400 mb-3" fill="currentColor" />
+                <p className="text-base sm:text-lg italic leading-relaxed mb-4">
+                  "{displayedReview.review_text}"
+                </p>
+                <p className="text-sm sm:text-base font-semibold">- {displayedReview.reviewer_name}</p>
+                {displayedReview.title && <p className="text-blue-200 text-xs sm:text-sm mt-1">{displayedReview.title}</p>}
+              </div>
+            )}
           </div>
         </section>
 
-        {/* Call to Action (Repeat) Section - Padding and font sizes set for mobile first */}
+        {/* Call to Action (Repeat) Section */}
         <section id="signup" className="py-12 sm:py-16 px-6 sm:px-8 bg-gray-50 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4 sm:mb-6">
             Ready to Take Control of Your Dev Journey?
@@ -266,11 +324,11 @@ function LandingPage() {
           </Link>
         </section>
 
-        {/* Footer - Mobile-first: Vertical stacking, then horizontal on sm+ */}
+        {/* Footer */}
         <footer className="bg-gray-800 text-gray-300 py-6 sm:py-8 px-6 sm:px-8 text-center rounded-t-3xl">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center">
             <p className="text-xs sm:text-sm mb-3 sm:mb-0">&copy; {new Date().getFullYear()} Software Engineer Work Log. All rights reserved.</p>
-            <div className="flex flex-wrap justify-center space-x-3 sm:space-x-4"> {/* flex-wrap for very small screens */}
+            <div className="flex flex-wrap justify-center space-x-3 sm:space-x-4">
               <Link to="#" className="text-gray-400 hover:text-white text-xs sm:text-sm transition duration-150">Privacy Policy</Link>
               <Link to="#" className="text-gray-400 hover:text-white text-xs sm:text-sm transition duration-150">Terms of Service</Link>
               <Link to="#" className="text-gray-400 hover:text-white text-xs sm:text-sm transition duration-150">Contact</Link>

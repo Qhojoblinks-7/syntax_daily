@@ -3,6 +3,7 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { createClient } from '@supabase/supabase-js'; // Import Supabase client
 import { Mail, Lock, User, Eye, EyeOff, ClipboardList, X } from 'lucide-react'; // Lucide icons
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 // Initialize Supabase client once (ensure these are your actual keys from .env)
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL';
@@ -15,6 +16,7 @@ function LoginPage({ initialAuthMode = 'login' }) { // Added initialAuthMode pro
   const [authError, setAuthError] = useState(null);
   const [authSuccess, setAuthSuccess] = useState(null);
   const [isLoading, setIsLoading] = useState(false); // Local loading state for form submission
+  const navigate = useNavigate(); // Initialize useNavigate hook
 
   // Validation Schema for Formik
   const LoginSchema = Yup.object().shape({
@@ -63,7 +65,8 @@ function LoginPage({ initialAuthMode = 'login' }) { // Added initialAuthMode pro
         }));
         if (error) throw error;
         setAuthSuccess('Logged in successfully!');
-        // Redirect or handle post-login logic in App.jsx (handled by session listener)
+        // Redirect to dashboard after successful login
+        navigate('/dashboard');
       }
       resetForm(); // Clear form fields on success
     } catch (error) {

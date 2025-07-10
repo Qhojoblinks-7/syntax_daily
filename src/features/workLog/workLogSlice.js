@@ -4,8 +4,11 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 const initialState = {
   myEntries: [],
   publicEntries: [],
+  reviews: [], // New state for reviews
   isLoading: false, // Initial loading state for data fetching
   error: null,
+  reviewsLoading: false, // Loading state for reviews
+  reviewsError: null, // Error state for reviews
 };
 
 // Async Thunk for fetching user's private work logs
@@ -22,15 +25,14 @@ export const fetchMyWorkLogs = createAsyncThunk(
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      console.log("Fetched My Work Logs Data:", data); // --- ADDED FOR DEBUGGING ---
       dispatch(setMyEntries(data)); // Update state with fetched data
       return data;
     } catch (e) {
-      console.error("Error fetching My Work Logs:", e.message); // --- ADDED FOR DEBUGGING ---
       dispatch(setWorkLogError(e.message)); // Dispatch local error action
       return rejectWithValue(e.message);
     } finally {
-      dispatch(setWorkLogLoading(false)); // Ensure loading state is reset
+      // Ensure loading state is reset even on error
+      dispatch(setWorkLogLoading(false));
     }
   }
 );
@@ -49,15 +51,38 @@ export const fetchPublicWorkLogs = createAsyncThunk(
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      console.log("Fetched Public Work Logs Data:", data); // --- ADDED FOR DEBUGGING ---
       dispatch(setPublicEntries(data)); // Update state with fetched data
       return data;
     } catch (e) {
-      console.error("Error fetching Public Work Logs:", e.message); // --- ADDED FOR DEBUGGING ---
       dispatch(setWorkLogError(e.message)); // Dispatch local error action
       return rejectWithValue(e.message);
     } finally {
-      dispatch(setWorkLogLoading(false)); // Ensure loading state is reset
+      // Ensure loading state is reset even on error
+      dispatch(setWorkLogLoading(false));
+    }
+  }
+);
+
+// Async Thunk for fetching approved reviews
+export const fetchApprovedReviews = createAsyncThunk(
+  'workLog/fetchApprovedReviews',
+  async (supabase, { rejectWithValue, dispatch }) => {
+    dispatch(setReviewsLoading(true)); // Set loading state for reviews
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('is_approved', true) // Only fetch approved reviews
+        .order('created_at', { ascending: false }); // Order by newest first
+
+      if (error) throw error;
+      dispatch(setReviews(data)); // Update state with fetched reviews
+      return data;
+    } catch (e) {
+      dispatch(setReviewsError(e.message)); // Dispatch local error action for reviews
+      return rejectWithValue(e.message);
+    } finally {
+      dispatch(setReviewsLoading(false)); // Ensure loading state is reset for reviews
     }
   }
 );
@@ -144,6 +169,11 @@ const workLogSlice = createSlice({
       state.isLoading = false;
       state.error = null;
     },
+    setReviews: (state, action) => { // New reducer for reviews
+      state.reviews = action.payload;
+      state.reviewsLoading = false;
+      state.reviewsError = null;
+    },
     setWorkLogLoading: (state, action) => {
       state.isLoading = action.payload;
     },
@@ -151,11 +181,21 @@ const workLogSlice = createSlice({
       state.error = action.payload;
       state.isLoading = false;
     },
+    setReviewsLoading: (state, action) => { // New reducer for reviews loading
+      state.reviewsLoading = action.payload;
+    },
+    setReviewsError: (state, action) => { // New reducer for reviews error
+      state.reviewsError = action.payload;
+      state.reviewsLoading = false;
+    },
     clearWorkLogs: (state) => {
       state.myEntries = [];
       state.publicEntries = [];
+      state.reviews = []; // Clear reviews on logout
       state.isLoading = false;
       state.error = null;
+      state.reviewsLoading = false;
+      state.reviewsError = null;
     },
   },
   extraReducers: (builder) => {
@@ -166,7 +206,7 @@ const workLogSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchMyWorkLogs.fulfilled, (state, action) => {
+      .addCase(fetchMyWorkLogs.fulfilled, (state) => {
         // State updated by setMyEntries reducer
         state.isLoading = false;
         state.error = null;
@@ -180,7 +220,7 @@ const workLogSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchPublicWorkLogs.fulfilled, (state, action) => {
+      .addCase(fetchPublicWorkLogs.fulfilled, (state) => {
         // State updated by setPublicEntries reducer
         state.isLoading = false;
         state.error = null;
@@ -188,6 +228,20 @@ const workLogSlice = createSlice({
       .addCase(fetchPublicWorkLogs.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload || 'Failed to fetch public work logs.';
+      })
+      // For fetchApprovedReviews (NEW)
+      .addCase(fetchApprovedReviews.pending, (state) => {
+        state.reviewsLoading = true;
+        state.reviewsError = null;
+      })
+      .addCase(fetchApprovedReviews.fulfilled, (state) => {
+        // State updated by setReviews reducer
+        state.reviewsLoading = false;
+        state.reviewsError = null;
+      })
+      .addCase(fetchApprovedReviews.rejected, (state, action) => {
+        state.reviewsLoading = false;
+        state.reviewsError = action.payload || 'Failed to fetch reviews.';
       })
       // For addOrUpdateWorkLog
       .addCase(addOrUpdateWorkLog.pending, (state) => {
@@ -218,5 +272,14 @@ const workLogSlice = createSlice({
   },
 });
 
-export const { setMyEntries, setPublicEntries, setWorkLogLoading, setWorkLogError, clearWorkLogs } = workLogSlice.actions;
+export const {
+  setMyEntries,
+  setPublicEntries,
+  setReviews, // Export new action
+  setWorkLogLoading,
+  setWorkLogError,
+  setReviewsLoading, // Export new action
+  setReviewsError, // Export new action
+  clearWorkLogs
+} = workLogSlice.actions;
 export default workLogSlice.reducer;
